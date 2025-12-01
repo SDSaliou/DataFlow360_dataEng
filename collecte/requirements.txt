@@ -1,0 +1,6 @@
+kafka-python
+pandas
+faker
+cassandra-driver
+python-dotenv
+requests

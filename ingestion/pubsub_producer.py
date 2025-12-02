@@ -1,4 +1,3 @@
-# pubsub_producer.py  ← nom du fichier
 import json
 import os
 import time
@@ -35,11 +34,11 @@ for kafka_topic, (pubsub_topic, source) in KAFKA_TOPICS.items():
     consumer = KafkaConsumer(
         kafka_topic,
         bootstrap_servers=KAFKA_BOOTSTRAP,
-        auto_offset_reset='latest',           # ou 'earliest' si tu veux tout rejouer
+        auto_offset_reset='latest',           
         enable_auto_commit=True,
         group_id=f'pubsub-bridge-{source}',
         value_deserializer=lambda m: json.loads(m.decode('utf-8')),
-        consumer_timeout_ms=5000  # évite blocage infini
+        consumer_timeout_ms=5000  
     )
     consumers.append((consumer, topic_paths[kafka_topic], source))
 
@@ -80,7 +79,7 @@ def enrich_message(data: dict, source: str) -> dict:
             "status": data.get("flight_status"),
             "is_night_arrival": is_night,
             "recommandation_voyageur": " | ".join(reco) if reco else "voyage fluide",
-            "ingestion_timestamp": datetime.utcnow().isoformat() + "Z",
+            "ingestion_timestamp": datetime.now().isoformat() + "Z",
             "source": "aviationstack"
         }
 
@@ -137,7 +136,7 @@ while True:
                 print(f"Erreur traitement {source}: {e}")
                 time.sleep(2)
 
-        time.sleep(0.1)  # évite 100% CPU
+        time.sleep(0.1)  
 
     except KeyboardInterrupt:
         print("\nArrêt du bridge Kafka → Pub/Sub")

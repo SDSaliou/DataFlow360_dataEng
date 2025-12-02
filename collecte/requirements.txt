@@ -4,3 +4,5 @@ faker
 cassandra-driver
 python-dotenv
 requests
+google-cloud-pubsub
+boto3

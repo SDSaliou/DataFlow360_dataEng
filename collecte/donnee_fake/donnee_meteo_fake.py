@@ -85,9 +85,9 @@ try:
     print("Topic Kafka supprimé.")
 except Exception as e:
     print(f"Erreur suppression topic (peut-être inexistant) : {e}")
-topic = NewTopic(name='weatherFake_topic', num_partitions=1, replication_factor=1)
-admin_client.create_topics([topic])
-print("Topic Kafka recréé.")
+# topic = NewTopic(name='weatherFake_topic', num_partitions=1, replication_factor=1)
+# admin_client.create_topics([topic])
+# print("Topic Kafka recréé.")
 
 
 villes_ouest_afrique = ["Dakar", "Ouagadougou", "Bamako", "Abidjan", "Conakry", "Niamey", "Lomé", "Cotonou"]
@@ -170,7 +170,7 @@ def generate_fake_weather_data(n=1000):
         
         # Générer pour Cassandra/Kafka
         record_cass = generate_weather_record()
-        producer.send('weatherFake_topic', value=record_cass)
+        #producer.send('weatherFake_topic', value=record_cass)
         session.execute("""
         INSERT INTO meteo_fake (
             id, ville, temperature, humidite, pression, vent_vitesse, precipitation,
@@ -185,7 +185,7 @@ def generate_fake_weather_data(n=1000):
             record_cass["is_raining"], record_cass["is_hot"], record_cass["is_night"],
             record_cass["recommandation"], datetime.now()
         ))
-        print(f"Cassandra/Kafka - {record_cass['ville']} → {record_cass['temperature']}°C | Pluie: {record_cass['pluie']}mm | {record_cass['recommandation'][:60]}...")
+        print(f"Cassandra - {record_cass['ville']} → {record_cass['temperature']}°C | Pluie: {record_cass['pluie']}mm | {record_cass['recommandation'][:60]}...")
     
     # Sauvegarde
     df_csv = pd.DataFrame(data_batch_csv)

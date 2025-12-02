@@ -9,13 +9,35 @@ services:
       kafka:
         condition: service_healthy
     volumes:
-      - ./collecte:/app
+      - ./collecte:/app/collecte
+      - ./ingestion:/app/ingestion
+      - ./credentials:/app/credentials:ro
+      - ./.env:/app/.env
     working_dir: /app
     environment:
       - CASSANDRA_HOST=cassandra
       - KAFKA_BOOTSTRAP=kafka:9092
       - AVIATIONSTACK_KEY=${AVIATIONSTACK_KEY} 
       - OPENWEATHER_KEY=${OPENWEATHER_KEY}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/gcp-key.json
+      - GCP_PROJECT_ID=dataflow-360
+    command: >
+      bash -c "
+        # Si la clé GitHub Actions existe → on l'écrit, sinon on garde le fichier local
+        if [ -n \"$${GCP_SA_KEY}\" ]; then
+          echo \"\$${GCP_SA_KEY}\" > /app/credentials/gcp-key.json
+          echo 'Clé GCP injectée via GitHub Secret'
+        fi &&
+        echo 'Lancement des producteurs API...' &&
+        python /app/collecte/donnee_api/apiVols_producer.py > /app/logs_vols.log 2>&1 & 
+        python /app/collecte/donnee_api/apiMeteo_producer.py > /app/logs_meteo.log 2>&1 & 
+        echo 'Attente 30s...' &&
+        sleep 30 &&
+        echo 'Lancement du bridge vers Pub/Sub...' &&
+        python /app/ingestion/pubsub_producer.py
+      "
+    ports:
+      - "8000:8000"
     networks: [dataflow_net]
     restart: unless-stopped
 

@@ -89,9 +89,9 @@ try:
     print("Topic Kafka supprimé.")
 except Exception as e:
     print(f"Erreur suppression topic (peut-être inexistant) : {e}")
-topic = NewTopic(name='volFake_topic', num_partitions=1, replication_factor=1)
-admin_client.create_topics([topic])
-print("Topic Kafka recréé.")
+# topic = NewTopic(name='volFake_topic', num_partitions=1, replication_factor=1)
+# admin_client.create_topics([topic])
+# print("Topic Kafka recréé.")
 
 # ---------- LISTE DES AEROPORTS ----------
 aeroports= ['Aéroport International Cardinal Bernadin Gantin de Cotonou',
@@ -185,7 +185,8 @@ def generate_fake_vol_data(n=1000):
 
         # Générer pour Cassandra et Kafka
         record_cass = gerenerate_fake_vol_record()
-        producer.send('volFake_topic', value=record_cass)
+        #supprimer la partie kafka
+        #producer.send('volFake_topic', value=record_cass)
 
         session.execute("""
         INSERT INTO vol_fake (
@@ -200,7 +201,7 @@ def generate_fake_vol_data(n=1000):
             record_cass["status"], record_cass["temperature"], record_cass["pluie"], record_cass["recommandation"],
             datetime.now()
         ))
-        print(f"Cassandra/Kafka - {record_cass['numero_vol']} → {record_cass['airport_depart']} | {record_cass['airport_arrivee']} | {record_cass['pays_depart']} | {record_cass['pays_destination']} | {record_cass['compagnie']}")
+        print(f"Cassandra - {record_cass['numero_vol']} → {record_cass['airport_depart']} | {record_cass['airport_arrivee']} | {record_cass['pays_depart']} | {record_cass['pays_destination']} | {record_cass['compagnie']}")
 
 # ---------- GÉNÉRATION DE DONNÉES ----------
     df_csv = pd.DataFrame(data_batch_csv)

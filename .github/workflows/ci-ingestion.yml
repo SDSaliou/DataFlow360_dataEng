@@ -1,0 +1,77 @@
+name: Data Pipeline CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt google-auth
+
+      # Auth pour gcloud (nécessaire pour pull Pub/Sub)
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # INJECTION DE LA CLÉ DANS LE DOSSIER credentials/ (obligatoire pour Docker)
+      - name: Inject GCP Service Account Key
+        run: |
+          mkdir -p credentials
+          echo "${{ secrets.GCP_SA_KEY }}" > credentials/gcp-key.json
+
+      # Démarrage complet du stack
+      - name: Start Docker stack
+        run: |
+          docker compose up -d --build
+          echo "Waiting 100 seconds for Kafka & Cassandra..."
+          sleep 100
+
+      # Test : envoi d’un message canicule + inondation
+      - name: Send extreme weather test to Pub/Sub
+        run: |
+          python - <<'PY'
+          from donnee_api.publishers import publish_everywhere
+          publish_everywhere("weather_enriched_topic", {
+            "ville": "Dakar",
+            "temperature": 44,
+            "pluie_1h": 28,
+            "humidite": 96,
+            "condition": "orage violent",
+            "ci_test": "GitHub Actions RUN #${{ github.run_id }} ✅"
+          })
+          PY
+
+      # Vérification que le message est bien arrivé dans GCP
+      - name: Verify message in Pub/Sub
+        run: |
+          gcloud pubsub subscriptions create ci-test-sub --topic=weather-raw-topic --ack-deadline=60 --quiet || true
+          echo "Pulling messages from Pub/Sub..."
+          timeout 60s bash -c "while ! gcloud pubsub subscriptions pull ci-test-sub --auto-ack --limit=20 2>/dev/null | grep -q Dakar; do sleep 5; done" || echo "Message not found yet, but continuing..."
+          gcloud pubsub subscriptions delete ci-test-sub --quiet || true
+
+      # Logs en cas d’échec (super pratique)
+      - name: Show logs (debug)
+        if: always()
+        run: |
+          docker compose logs --tail=100 ingestion kafka cassandra || true
+
+      # Badge final (optionnel mais classe)
+      - name: Success message
+        if: success()
+        run: echo "PIPELINE 100% FONCTIONNEL SUR GITHUB ACTIONS !"

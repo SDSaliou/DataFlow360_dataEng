@@ -4,7 +4,6 @@ import time
 from datetime import datetime, timezone
 from kafka import KafkaConsumer
 from google.cloud import pubsub_v1
-from google.api_core import retry
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,7 +44,6 @@ for kafka_topic, (pubsub_topic, source) in KAFKA_TOPICS.items():
 print(f"Bridge Kafka → Pub/Sub démarré | Projet: {PROJET}")
 print(f"Écoute sur : {list(KAFKA_TOPICS.keys())}")
 print(f"Envoi vers   : {list(topic_paths.values())}")
-print("-" * 60)
 
 # ==================== FONCTION D'ENRICHISSEMENT ====================
 def enrich_message(data: dict, source: str) -> dict:

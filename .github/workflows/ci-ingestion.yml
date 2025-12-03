@@ -18,7 +18,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r collecte/requirements.txt google-auth
+        run: pip install -r kafka-python google-cloud-pubsub python-dotenv
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -42,22 +42,23 @@ jobs:
 
       - name: Send test message to Pub/Sub 
         run: |
+          cd collecte
           python -c "
-          from collecte.donnee_api.publishers import publish_everywhere
-          publish_everywhere('weather_enriched_topic', {
-            'test': 'GitHub Actions OK',
+          from donnee_api.publishers import publish_everywhere
+          publish_everywhere('weather-raw-topic', {
             'ville': 'Dakar',
-            'temperature': 29.5,
-            'ci_test': 'GitHub Actions RUN #${{ github.run_id }}'
-          })
-          "
+            'temperature': 46,
+            'pluie_1h': 40,
+            'humidite': 98,
+            'test': 'GitHub Actions FULL SUCCESS',
+            'run_id': '${{ github.run_id }}'
+          })"
 
       - name: Verify message in Pub/Sub
         run: |
-          gcloud pubsub subscriptions create ci-test-sub --topic=weather-raw-topic --ack-deadline=60 --quiet || true
-          echo "Pulling messages from Pub/Sub..."
-          timeout 60s bash -c "while ! gcloud pubsub subscriptions pull ci-test-sub --auto-ack --limit=20 2>/dev/null | grep -q Dakar; do sleep 5; done" || echo "Message not found yet, but continuing..."
-          gcloud pubsub subscriptions delete ci-test-sub --quiet || true
+          gcloud pubsub subscriptions create ci-sub --topic=weather-raw-topic --quiet || true
+          gcloud pubsub subscriptions pull ci-sub --auto-ack --limit=5
+          gcloud pubsub subscriptions delete ci-sub --quiet || true
 
       - name: Show logs (debug)
         if: always()

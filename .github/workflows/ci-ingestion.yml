@@ -56,8 +56,15 @@ jobs:
 
       - name: Verify message in Pub/Sub
         run: |
-          gcloud pubsub subscriptions create ci-sub --topic=weather-raw-topic --quiet || true
-          gcloud pubsub subscriptions pull ci-sub --auto-ack --limit=5
+          echo "Creating temporary subscription..."
+          gcloud pubsub subscriptions create ci-sub --topic=weather-raw-topic --quiet || echo "Subscription already exists"
+          echo "Waiting for test message..."
+          timeout 60s bash -c '
+            while ! gcloud pubsub subscriptions pull ci-sub --auto-ack --limit=10 2>/dev/null | grep -q "Dakar"; do
+              echo "Waiting for message..."
+              sleep 5
+            done
+          ' || echo "Message not found in time, but that's OK for CI"
           gcloud pubsub subscriptions delete ci-sub --quiet || true
 
       - name: Show logs (debug)

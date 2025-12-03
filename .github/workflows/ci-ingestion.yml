@@ -18,7 +18,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install -r kafka-python google-cloud-pubsub python-dotenv
+        run: pip install kafka-python google-cloud-pubsub python-dotenv
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2

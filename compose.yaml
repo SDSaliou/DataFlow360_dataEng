@@ -15,6 +15,7 @@ services:
       - ./.env:/app/.env
     working_dir: /app
     environment:
+      - PYTHONPATH=/app/collecte
       - CASSANDRA_HOST=cassandra
       - KAFKA_BOOTSTRAP=kafka:9092
       - AVIATIONSTACK_KEY=${AVIATIONSTACK_KEY} 

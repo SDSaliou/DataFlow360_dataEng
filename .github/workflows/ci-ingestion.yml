@@ -43,7 +43,7 @@ jobs:
       - name: Send test message to Pub/Sub 
         run: |
           python -c "
-          from donnee_api.publishers import publish_everywhere
+          from collecte.donnee_api.publishers import publish_everywhere
           publish_everywhere('weather_enriched_topic', {
             'test': 'GitHub Actions OK',
             'ville': 'Dakar',
@@ -62,7 +62,7 @@ jobs:
       - name: Show logs (debug)
         if: always()
         run: |
-          docker compose logs --tail=100 ingestion kafka cassandra || true
+          docker compose logs --tail=100 python_ingestion kafka cassandra || true
 
       - name: Success message
         if: success()
